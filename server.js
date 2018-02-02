@@ -16,26 +16,26 @@ const getStateString = function() {
   return crypto.randomBytes(40).toString("hex");
 }
 
-var app = express();
+const app = express();
 app.use(bodyParser.json());
 app.use(express.static("public"));
 
 // Set of all registered emails.
 // TODO: Implement a real persistent storage solution.
-var gEmails = new Set();
+const gEmails = new Set();
 
 // We send verification emails to addresses that want to subscribe.
 // These addresses are temporarily stored here, mapped to the unique
 // string token that is used for verification.
-var gUnverifiedEmails = new Map();
+const gUnverifiedEmails = new Map();
 
 // This is set later when reading SMTP credentials from the environment.
 // This exists as a variable so we can use it in the from header of emails.
-var kSMTPUsername;
+let kSMTPUsername;
 
 // The SMTP transport object. This is initialized to a nodemailer transport
 // object while reading SMTP credentials, or to a dummy function in debug mode.
-var gTransporter;
+let gTransporter;
 
 app.use(sessions({
   cookieName: "session",
@@ -50,12 +50,12 @@ app.get("/", function(req, res) {
 
 app.post("/user/add", function(req, res) {
   // TODO: use a hash of the email address instead of a random string.
-  let state = getStateString();
+  const state = getStateString();
   req.session.state = state;
-  let email = req.body.email;
+  const email = req.body.email;
   req.session.email = email;
-  let url = localServerURL + "/user/verify?state=" + state;
-  let mailOptions = {
+  const url = localServerURL + "/user/verify?state=" + state;
+  const mailOptions = {
     from: "\"Firefox Breach Alerts\" <" + kSMTPUsername + ">", // sender address
     to: email, // list of receivers
     subject: "Firefox Breach Alert", // Subject line
@@ -80,7 +80,7 @@ app.post("/user/add", function(req, res) {
 });
 
 app.get("/user/verify", function(req, res) {
-  let email = gUnverifiedEmails.get(req.query.state);
+  const email = gUnverifiedEmails.get(req.query.state);
   if (email) {
     gEmails.add(email);
     gUnverifiedEmails.delete(req.query.state);
@@ -106,14 +106,14 @@ app.post("/user/list", function(req, res) {
 });
 
 app.post("/user/breached", function(req, res) {
-  let emails = req.body.emails;
-  let response = [];
+  const emails = req.body.emails;
+  const response = [];
 
   // Send notification email to the intersection of the set of
   // emails in the request and the set of registered emails.
-  for (let email of emails) {
+  for (const email of emails) {
     if (gEmails.has(email)) {
-      let mailOptions = {
+      const mailOptions = {
         from: "\"Firefox Breach Alerts\" <" + kSMTPUsername + ">", // sender address
         to: email, // list of receivers
         subject: "Firefox Breach Alert", // Subject line
@@ -140,7 +140,7 @@ const FxAOAuthUtils = {
   get profileUri() { return process.env.OAUTH_PROFILE_URI },
 };
 
-var FxAOAuth = new ClientOAuth2({
+const FxAOAuth = new ClientOAuth2({
   clientId: process.env.OAUTH_CLIENT_ID,
   clientSecret: process.env.OAUTH_CLIENT_SECRET,
   accessTokenUri: FxAOAuthUtils.tokenUri,
@@ -152,8 +152,8 @@ var FxAOAuth = new ClientOAuth2({
 app.get("/oauth/init", function(req, res) {
   // Set a random state string in a cookie so that we can verify
   // the user when they're redirected back to us after auth.
-  let state = getStateString();
-  let uri = FxAOAuth.code.getUri({state});
+  const state = getStateString();
+  const uri = FxAOAuth.code.getUri({state});
   req.session.state = state;
   res.redirect(uri);
 });
@@ -176,7 +176,7 @@ app.get('/oauth/redirect', function (req, res) {
           Authorization: "Bearer " + user.accessToken,
         },
       }).then(function (data) {
-        let email = JSON.parse(data.body).email;
+        const email = JSON.parse(data.body).email;
         gEmails.add(email);
         res.send("Registered " + email + " for breach alerts. You may now close this window/tab.");
       });
@@ -189,7 +189,7 @@ app.get("/test", function(req, res) {
   res.send(req.body);
 })
 
-var port = process.env.PORT || 6060;
+const port = process.env.PORT || 6060;
 
 // Allow a debug mode that will send JSON back to the client instead of sending emails.
 if (process.env.DEBUG_DUMMY_SMTP) {
@@ -202,9 +202,9 @@ if (process.env.DEBUG_DUMMY_SMTP) {
 } else {
   console.log("Attempting to get SMTP config from environment...");
   kSMTPUsername = process.env.SMTP_USERNAME;
-  let password = process.env.SMTP_PASSWORD;
-  let SMTP_host = process.env.SMTP_HOST;
-  let SMTP_port = process.env.SMTP_PORT;
+  const password = process.env.SMTP_PASSWORD;
+  const SMTP_host = process.env.SMTP_HOST;
+  const SMTP_port = process.env.SMTP_PORT;
   if (kSMTPUsername && password) {
     gTransporter = nodemailer.createTransport({
       host: SMTP_host,
