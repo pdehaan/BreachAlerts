@@ -4,17 +4,17 @@ const AppConstants = require("./app-constants").init();
 
 const express = require("express");
 const bodyParser = require("body-parser");
+const helmet = require("helmet");
 const sessions = require("client-sessions");
 
 const EmailUtils = require("./email-utils");
-
 const OAuthRoute = require("./routes/oauth");
 const UserRoute = require("./routes/user");
 
 const app = express();
 app.use(bodyParser.json());
 app.use(express.static("public"));
-
+// app.use(helmet());
 app.use(sessions({
   cookieName: "session",
   secret: AppConstants.COOKIE_SECRET,
